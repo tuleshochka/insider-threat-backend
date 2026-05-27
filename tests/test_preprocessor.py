@@ -40,6 +40,8 @@ def mock_data_dir(tmp_path):
         "id": [f"F{i}" for i in range(4)],
         "date": ["01/04/2010 08:30:00", "01/04/2010 09:30:00", "01/04/2010 11:00:00", "01/04/2010 14:00:00"],
         "user": ["USR001", "USR001", "USR002", "USR002"],
+        "pc": ["PC-001", "PC-001", "PC-002", "PC-002"],
+        "filename": ["doc1.txt", "doc2.txt", "doc3.txt", "doc4.txt"],
         "activity": ["File Open", "File Write", "File Open", "File Open"],
         "to_removable_media": [False, False, False, True],
         "from_removable_media": [False, True, False, False],
@@ -51,9 +53,10 @@ def mock_data_dir(tmp_path):
         "id": [f"E{i}" for i in range(3)],
         "date": ["01/04/2010 08:00:00", "01/04/2010 10:00:00", "01/04/2010 12:00:00"],
         "user": ["USR001", "USR002", "USR001"],
-        "activity": ["Send", "Receive", "Send"],
+        "to": ["USR002@dtaa.com", "USR001@dtaa.com", "external@gmail.com"],
+        "from": ["USR001@dtaa.com", "USR002@dtaa.com", "USR001@dtaa.com"],
         "size": [1024, 512, 2048],
-        "attachments": ["doc.pdf", None, None],
+        "attachments": [1, 0, 0],
     }
     pd.DataFrame(email).to_csv(os.path.join(tmp_path, "email.csv"), index=False)
 
@@ -62,9 +65,19 @@ def mock_data_dir(tmp_path):
         "id": [f"D{i}" for i in range(2)],
         "date": ["01/04/2010 09:00:00", "01/04/2010 17:00:00"],
         "user": ["USR002", "USR002"],
+        "pc": ["PC-002", "PC-002"],
         "activity": ["Connect", "Disconnect"],
     }
     pd.DataFrame(device).to_csv(os.path.join(tmp_path, "device.csv"), index=False)
+
+    # HTTP
+    http = {
+        "id": [f"H{i}" for i in range(2)],
+        "date": ["01/04/2010 10:00:00", "01/04/2010 11:00:00"],
+        "user": ["USR001", "USR002"],
+        "url": ["http://google.com", "http://wikipedia.org"],
+    }
+    pd.DataFrame(http).to_csv(os.path.join(tmp_path, "http.csv"), index=False)
 
     return tmp_path
 

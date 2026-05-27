@@ -281,8 +281,8 @@ class DataPreprocessor:
             return (["date", "user", "pc", "activity", "id"],
                     {"user": str, "pc": str, "activity": str, "id": str})
         if name == "file":
-            return (["date", "user", "pc", "filename", "id"],
-                    {"user": str, "pc": str, "filename": str, "id": str})
+            return (["date", "user", "pc", "filename", "activity", "to_removable_media", "from_removable_media", "id"],
+                    {"user": str, "pc": str, "filename": str, "activity": str, "to_removable_media": str, "from_removable_media": str, "id": str})
         if name == "email":
             return (["date", "user", "to", "from", "size", "attachments", "id"],
                     {"user": str, "to": str, "from": str, "size": "int64", "attachments": "int64", "id": str})

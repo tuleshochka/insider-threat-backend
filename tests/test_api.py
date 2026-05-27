@@ -1,10 +1,8 @@
-"""Tests for FastAPI endpoints (using SQLite for local testing)."""
-import sys, os
-sys.path.insert(0, r'D:\Политех\Мага\Дипломы\М\insider_threat_recongition\backend')
-
-os.environ["DB_TYPE"] = "sqlite"
-
+"""Tests for FastAPI endpoints."""
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from main import app
 from app.models.db import engine, Base
 

@@ -50,8 +50,10 @@ if not os.path.exists(DATA_R42) or not os.path.exists(DATA_R52):
     print(f"r5.2 exists: {os.path.exists(DATA_R52)}")
     sys.exit(1)
 
-feat_42 = pd.read_csv(DATA_R42)
-feat_52 = pd.read_csv(DATA_R52)
+feat_42 = pd.read_csv(DATA_R42).dropna(subset=["target"]).reset_index(drop=True)
+feat_42["target"] = feat_42["target"].astype(int)
+feat_52 = pd.read_csv(DATA_R52).dropna(subset=["target"]).reset_index(drop=True)
+feat_52["target"] = feat_52["target"].astype(int)
 
 print(f"Loaded CERT r4.2: {len(feat_42):,} rows")
 print(f"Loaded CERT r5.2: {len(feat_52):,} rows")

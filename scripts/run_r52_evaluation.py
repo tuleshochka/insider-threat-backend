@@ -54,6 +54,9 @@ if not os.path.exists(DATA_PATH):
     sys.exit(1)
 
 feat = pd.read_csv(DATA_PATH)
+# Удаляем пустые/неразмеченные строки (NaN в target)
+feat = feat.dropna(subset=["target"]).reset_index(drop=True)
+feat["target"] = feat["target"].astype(int)
 print(f"Loaded {len(feat):,} rows, {len(feat.columns)} columns.")
 
 y = feat["target"].values

@@ -103,10 +103,12 @@ class Branch(nn.Module):
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(in_dim, hidden),
-            nn.ReLU(),
+            nn.BatchNorm1d(hidden),
+            nn.LeakyReLU(0.1),
             nn.Dropout(0.3),
             nn.Linear(hidden, out_dim),
-            nn.ReLU(),
+            nn.BatchNorm1d(out_dim),
+            nn.LeakyReLU(0.1),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -164,7 +166,10 @@ class AttentionFusion(nn.Module):
         self.attn_project = nn.Linear(latent_dim, 1, bias=False)
         total = n * latent_dim + latent_dim  # concat + weighted
         self.fusion = nn.Sequential(
-            nn.Linear(total, 32), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(total, 32),
+            nn.BatchNorm1d(32),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.3),
             nn.Linear(32, 1),
         )
 

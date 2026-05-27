@@ -37,6 +37,7 @@ class Settings(BaseSettings):
 
     # ── Гиперпараметры модели-детектора аномалий ─────────────────────────
     model_version: str = "1.0.0"
+    model_dir: str = "insider_threat_model_r52"
     mlflow_tracking_uri: str = "sqlite:///mlruns.db"
     # Версия архитектуры модели. Нужна для отслеживания экспериментов
     # и возможности восстановить конкретную обученную модель.

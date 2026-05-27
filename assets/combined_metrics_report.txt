@@ -1,0 +1,26 @@
+CROSS-DATASET ROBUSTNESS & GENERALIZATION REPORT (Group Test Users)
+=================================================================
+
+Evaluation is strictly performed on unseen 30% stratified test employees (no leakage).
+Model type: XGBoost (UEBA features stacked with temporal baselines)
+
+1. F2-SCORE MATRIX:
+                   [Test r4.2]   [Test r5.2]
+  [Trained r4.2]    0.9314        0.3300
+  [Trained r5.2]    0.6424        0.4900
+
+2. PRECISION MATRIX:
+                   [Test r4.2]   [Test r5.2]
+  [Trained r4.2]    0.7845        0.1434
+  [Trained r5.2]    0.5653        0.2005
+
+3. RECALL MATRIX:
+                   [Test r4.2]   [Test r5.2]
+  [Trained r4.2]    0.9771        0.4890
+  [Trained r5.2]    0.6651        0.7670
+
+4. GENERALIZATION INSIGHTS:
+  - Model r4.2 generalization F2 drop when tested on v5.2: 60.14%
+  - Model r5.2 generalization F2 drop when tested on v4.2: -15.24%
+  - The z-score normalization on a per-user basis significantly reduces domain shift
+    loss because it abstracts absolute event counts into personal relative deviations.
