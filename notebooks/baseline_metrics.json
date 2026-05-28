@@ -1,0 +1,8 @@
+[
+    {"name": "Isolation Forest", "precision": 0.0065, "recall": 0.0736, "f1_score": 0.0119, "f2_score": 0.0239},
+    {"name": "Autoencoder", "precision": 0.0340, "recall": 0.2165, "f1_score": 0.0587, "f2_score": 0.1043},
+    {"name": "Random Forest + SMOTE", "precision": 0.2894, "recall": 0.6736, "f1_score": 0.4049, "f2_score": 0.5323},
+    {"name": "XGBoost + SMOTE", "precision": 0.3895, "recall": 0.7209, "f1_score": 0.5058, "f2_score": 0.6161},
+    {"name": "LightGBM + SMOTE", "precision": 0.3398, "recall": 0.7341, "f1_score": 0.4645, "f2_score": 0.5958},
+    {"name": "Multi-Input Net (Old model)", "precision": 0.0768, "recall": 0.2516, "f1_score": 0.1177, "f2_score": 0.1729}
+]
