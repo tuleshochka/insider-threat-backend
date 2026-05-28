@@ -10,3 +10,4 @@ mlruns/
 .venv/
 venv/
 notebooks/cert_nlp_sequences.npz
+cert_nlp_sequences.npz
