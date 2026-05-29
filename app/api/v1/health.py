@@ -20,5 +20,6 @@ router = APIRouter()
 # предсказуемую структуру JSON, даже если в будущем в модель добавятся
 # новые поля. FastAPI автоматически сериализует ответ и валидирует его
 # по Pydantic-схеме, что исключает случайную утечку внутренних данных.
+@router.get("", response_model=HealthOut)
 def health_check():
     return HealthOut()

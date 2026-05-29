@@ -177,3 +177,34 @@ class TrainingPlanOut(BaseModel):
     required_artifacts: list[str]
     validation_strategy: list[str]
     releases: list[DatasetReleaseOut]
+
+
+# ── Схемы для авторизации системных пользователей ──
+class SystemUserCreate(BaseModel):
+    username: str
+    password: str
+    role: str = Field(default="observer", pattern="^(admin|specialist|observer)$")
+
+
+class SystemUserOut(BaseModel):
+    id: int
+    username: str
+    role: str
+    is_active: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SystemUserRoleUpdate(BaseModel):
+    role: str = Field(pattern="^(admin|specialist|observer)$")
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    username: str | None = None
+

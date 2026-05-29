@@ -1,18 +1,19 @@
-"""Lightweight role context for the prototype corporate workflow."""
+"""Role-based access control with real JWT authentication."""
 from dataclasses import dataclass
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
 
-from fastapi import Header, HTTPException
+from app.config import settings
+from app.models.db import get_db
+from app.models.orm import SystemUser
 
+# Define OAuth2 scheme pointing to our login endpoint
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 ROLE_PERMISSIONS: dict[str, set[str]] = {
-    "security_specialist": {
-        "anomalies:read",
-        "anomalies:review",
-        "incidents:read",
-        "incidents:create",
-        "training:read",
-    },
-    "lead": {
+    "admin": {
         "anomalies:read",
         "anomalies:review",
         "incidents:read",
@@ -21,6 +22,17 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "audit:read",
         "settings:read",
         "settings:write",
+        "training:read",
+        "training:manage",
+        "users:manage",
+    },
+    "specialist": {
+        "anomalies:read",
+        "anomalies:review",
+        "incidents:read",
+        "incidents:create",
+        "incidents:update",
+        "settings:read",
         "training:read",
         "training:manage",
     },
@@ -42,19 +54,33 @@ class Actor:
 
 
 def get_actor(
-    x_actor_name: str | None = Header(default="demo.specialist"),
-    x_actor_role: str | None = Header(default="security_specialist"),
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
 ) -> Actor:
-    """Resolve a demo actor from headers.
-
-    The production version should replace this with SSO/LDAP integration.
-    For the home test stand headers keep role scenarios easy to reproduce.
-    """
-    role = x_actor_role or "security_specialist"
+    """Resolve current actor using JWT authentication."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Не удалось проверить учетные данные",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = db.query(SystemUser).filter(SystemUser.username == username).first()
+    if user is None or not user.is_active:
+        raise credentials_exception
+        
+    role = user.role
     if role not in ROLE_PERMISSIONS:
-        raise HTTPException(403, f"Unknown role: {role}")
+        raise HTTPException(403, f"Неизвестная роль: {role}")
+        
     return Actor(
-        name=x_actor_name or "demo.specialist",
+        name=user.username,
         role=role,
         permissions=ROLE_PERMISSIONS[role],
     )
@@ -62,4 +88,4 @@ def get_actor(
 
 def require_permission(actor: Actor, permission: str) -> None:
     if permission not in actor.permissions:
-        raise HTTPException(403, f"Permission required: {permission}")
+        raise HTTPException(403, f"Недостаточно прав. Требуется: {permission}")

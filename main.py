@@ -70,3 +70,27 @@ def on_startup():
     вызов нужно убрать и перейти на Alembic, чтобы не потерять данные.
     """
     Base.metadata.create_all(bind=engine)
+    
+    # Автосид дефолтного администратора системы
+    from app.models.db import SessionLocal
+    from app.models.orm import SystemUser
+    from app.core.security import get_password_hash
+    
+    db = SessionLocal()
+    try:
+        admin_exists = db.query(SystemUser).filter(SystemUser.role == "admin").first()
+        if not admin_exists:
+            admin = SystemUser(
+                username="admin",
+                hashed_password=get_password_hash("admin123"),
+                role="admin",
+                is_active=True
+            )
+            db.add(admin)
+            db.commit()
+            print("Default admin system user successfully created: admin / admin123")
+    except Exception as e:
+        print(f"Error seeding default admin: {e}")
+    finally:
+        db.close()
+

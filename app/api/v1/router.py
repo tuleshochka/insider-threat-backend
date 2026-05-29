@@ -1,6 +1,7 @@
 """API v1 router. Aggregates all endpoint modules."""
-from fastapi import APIRouter
-from app.api.v1 import anomalies, corporate, dashboard, events, health, train, training_plan, users
+from fastapi import APIRouter, Depends
+from app.api.v1 import anomalies, corporate, dashboard, events, health, users, auth, system_users, export
+from app.api.v1.security import get_actor
 
 api_router = APIRouter()
 
@@ -18,11 +19,14 @@ api_router = APIRouter()
 #
 # Порядок подключения не влияет на маршрутизацию — FastAPI разрешает
 # конфликты путей по принципу «специфичный маршрут раньше общего».
-api_router.include_router(train.router, prefix="/train", tags=["Training"])
-api_router.include_router(users.router, prefix="/users", tags=["Users"])
-api_router.include_router(anomalies.router, prefix="/anomalies", tags=["Anomalies"])
-api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
+api_router.include_router(auth.router, prefix="/auth", tags=["Authentication"])
+api_router.include_router(system_users.router, prefix="/system-users", tags=["System Users"])
+api_router.include_router(users.router, prefix="/users", tags=["Users"], dependencies=[Depends(get_actor)])
+api_router.include_router(anomalies.router, prefix="/anomalies", tags=["Anomalies"], dependencies=[Depends(get_actor)])
+api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"], dependencies=[Depends(get_actor)])
+api_router.include_router(export.router, prefix="/export", tags=["Export"], dependencies=[Depends(get_actor)])
 api_router.include_router(health.router, prefix="/health", tags=["Health"])
-api_router.include_router(events.router, prefix="/events", tags=["Events"])
+api_router.include_router(events.router, prefix="/events", tags=["Events"], dependencies=[Depends(get_actor)])
 api_router.include_router(corporate.router, prefix="/corporate", tags=["Corporate"])
-api_router.include_router(training_plan.router, prefix="/training", tags=["Training Plan"])
+
+

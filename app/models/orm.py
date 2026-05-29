@@ -201,3 +201,18 @@ class SystemSetting(Base):
     description = Column(Text, nullable=True)
     updated_by = Column(String(100), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class SystemUser(Base):
+    """
+    Системные пользователи (операторы системы) с разграничением прав доступа.
+    """
+    __tablename__ = "system_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    role = Column(String(50), nullable=False, default="observer") # admin, specialist, observer
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

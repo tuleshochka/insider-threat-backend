@@ -43,16 +43,45 @@ for scenario in sorted(answer_scenarios):
 print(f"  Найдено вредоносных event-IDs: {len(malicious_event_ids)}")
 
 TOKEN_MAP = {
-    "<PAD>": 0, "<UNK>": 1, "LOGON": 2, "LOGOFF": 3, "USB_CONNECT": 4, 
-    "USB_DISCONNECT": 5, "FILE_OPEN": 6, "FILE_WRITE": 7, "FILE_COPY": 8, 
-    "FILE_DELETE": 9, "FILE_OPEN_USB": 10, "FILE_WRITE_USB": 11, 
-    "FILE_COPY_USB": 12, "FILE_DELETE_USB": 13, "EMAIL_SEND_INT": 14, 
-    "EMAIL_SEND_EXT": 15, "HTTP_BROWSE": 16, "HTTP_UPLOAD": 17, "HTTP_DOWNLOAD": 18,
-    "LOGON_AFTER_HOURS": 19, "LOGON_WEEKEND": 20,
-    "FILE_WRITE_USB_ARCHIVE": 21, "FILE_WRITE_USB_EXE": 22,
-    "FILE_COPY_USB_ARCHIVE": 23, "FILE_COPY_USB_EXE": 24,
-    "EMAIL_SEND_EXT_LARGE": 25, "EMAIL_SEND_EXT_BULK": 26
+    "<PAD>": 0,
+    "<UNK>": 1,
+
+    "LOGON": 2,
+    "LOGOFF": 3,
+    "LOGON_AFTER_HOURS": 4,
+    "LOGON_WEEKEND": 5,
+
+    "USB_CONNECT": 6,
+    "USB_DISCONNECT": 7,
+    "USB_LARGE_TRANSFER": 8,
+
+    "FILE_OPEN": 9,
+    "FILE_WRITE": 10,
+    "FILE_COPY": 11,
+    "FILE_DELETE": 12,
+
+    "FILE_OPEN_USB": 13,
+    "FILE_WRITE_USB": 14,
+    "FILE_COPY_USB": 15,
+    "FILE_DELETE_USB": 16,
+
+    "FILE_WRITE_USB_ARCHIVE": 17,
+    "FILE_WRITE_USB_EXE": 18,
+    "FILE_COPY_USB_ARCHIVE": 19,
+    "FILE_COPY_USB_EXE": 20,
+    "FILE_BULK_COPY": 21,
+
+    "EMAIL_SEND_INT": 22,
+    "EMAIL_SEND_EXT": 23,
+    "EMAIL_SEND_EXT_LARGE": 24,
+    "EMAIL_SEND_EXT_BULK": 25,
+
+    "HTTP_BROWSE": 26,
+    "HTTP_UPLOAD": 27,
+    "HTTP_UPLOAD_LARGE": 28,
+    "HTTP_DOWNLOAD": 29
 }
+
 VOCAB_SIZE = len(TOKEN_MAP)
 
 print("\n" + "=" * 60)
@@ -193,7 +222,7 @@ print("ЭТАП 3: Формирование последовательносте
 print("=" * 60)
 
 # 1. Сначала сортируем все события внутри дней
-for (user, day), events in user_day_events.items():
+for (user, day), events in sorted(user_day_events.items(), key=lambda x: (x[0][0], x[0][1])):
     events.sort(key=lambda x: x[0])
 
 # 2. Вычисляем сырые суточные метрики для каждого дня пользователя (log1p от счетчиков)
@@ -214,6 +243,40 @@ for (user, day), events in user_day_events.items():
         np.log1p(email_count),
         np.log1p(http_count)
     ], dtype=np.float32)
+
+
+# Behavioral drift features
+behavioral_drift = {}
+ROLLING_WINDOW_DAYS = 14
+
+user_days_map = defaultdict(list)
+
+for (user, day) in raw_features.keys():
+    user_days_map[user].append(day)
+
+for user in user_days_map:
+    user_days_map[user] = sorted(user_days_map[user])
+
+for user, days in user_days_map.items():
+    for idx, day in enumerate(days):
+        current = raw_features[(user, day)]
+        prev_days = days[max(0, idx - ROLLING_WINDOW_DAYS):idx]
+
+        if len(prev_days) == 0:
+            drift = np.zeros_like(current)
+        else:
+            baseline = np.mean([
+                raw_features[(user, d)]
+                for d in prev_days
+            ], axis=0)
+
+            drift = current - baseline
+
+        behavioral_drift[(user, day)] = np.clip(
+            drift,
+            -5.0,
+            5.0
+        ).astype(np.float32)
 
 # 3. Делаем разбиение на пользователей для вычисления профилей (Train-only)
 unique_users = sorted(list(set(u for u, d in user_day_events.keys())))
@@ -291,7 +354,7 @@ for (user, day), events in user_day_events.items():
     
     # Считаем Z-score отклонение с ограничением std снизу и клиппированием
     daily_raw = raw_features[(user, day)]
-    safe_std = np.where(std < 1e-2, global_std, std)
+    safe_std = np.maximum(std, global_std * 0.25)
     dev_z = (daily_raw - mean) / safe_std
     dev_z = np.clip(dev_z, -10.0, 10.0)
     
@@ -340,7 +403,12 @@ for (user, day), events in user_day_events.items():
     labels.append(1 if has_malicious else 0)
     users_list.append(user)
     dates_list.append(day)
-    dev_z_list.append(dev_z)
+    combined_features = np.concatenate([
+        dev_z,
+        behavioral_drift[(user, day)]
+    ]).astype(np.float32)
+
+    dev_z_list.append(combined_features)
 
 X = np.array(sequences, dtype=np.int32)
 X_hours = np.array(hours_seq, dtype=np.int32)
@@ -374,5 +442,19 @@ np.savez_compressed(
     test_users=np.array(test_users_list),
     metadata=json.dumps(metadata)
 )
+
+split_info = {
+    'train_users': train_users_list,
+    'val_users': val_users_list,
+    'test_users': test_users_list,
+    'seed': 42
+}
+
+split_json_path = OUTPUT_FILE.replace('.npz', '_split.json')
+with open(split_json_path, 'w', encoding='utf-8') as f:
+    json.dump(split_info, f, ensure_ascii=False, indent=2)
+
+print(f"  Файл разбиения сохранен: {split_json_path}")
+
 print(f"\n  Файл сохранен: {OUTPUT_FILE} ({(os.path.getsize(OUTPUT_FILE)/1024**2):.1f} МБ)")
 print("ГОТОВО! Загрузите в Colab.")

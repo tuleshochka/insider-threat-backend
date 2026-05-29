@@ -65,7 +65,13 @@ class Settings(BaseSettings):
     # образец маркируется как подозрительный. Значение подбирается
     # экспериментально; 95 — разумный баланс между полнотой и точностью.
 
+    # ── JWT Настройки безопасности ─────────────────────────────────────────
+    secret_key: str = "SUPER_SECRET_KEY_FOR_UEBA_MONITOR_E239A01"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440  # 24 часа
+
     class Config:
+
         env_file = ".env"
         # Pydantic прочитает файл .env в корне бекенда (backend/.env) и
         # применит указанные там значения поверх умолчаний. Так можно
